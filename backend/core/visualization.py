@@ -9,17 +9,18 @@ class Visualizer:
         
         # Matplotlib setup
         plt.ion()
-        self.fig, self.axs = plt.subplots(4, 1, figsize=(7, 8), sharex=True)
+        # Matplotlib setup
+        plt.ion()
+        # DEBUG: Only plotting MoViNet classes as requested
+        self.fig, self.ax = plt.subplots(1, 1, figsize=(7, 4))
         self.lines = {
-            "velocity": self.axs[0].plot([], [], label="velocity")[0],
-            "head_yaw": self.axs[1].plot([], [], label="head_yaw")[0],
-            "hand_fidget": self.axs[2].plot([], [], label="hand_fidget")[0],
-            "motion_E": self.axs[3].plot([], [], label="motion_E")[0],
+            "movinet_p0": self.ax.plot([], [], label="Class 0 (Fight?)", color='r')[0],
+            "movinet_p1": self.ax.plot([], [], label="Class 1 (NoFight?)", color='b')[0],
         }
         
-        for ax in self.axs:
-            ax.legend()
-            ax.set_xlim(0, self.config.WINDOW)
+        self.ax.legend()
+        self.ax.set_xlim(0, self.config.WINDOW)
+        self.ax.set_ylim(0, 1.0)
 
     def draw_overlay(self, frame, signals, intent_score=0.0, threat_level="CALM"):
         """
@@ -48,6 +49,7 @@ class Visualizer:
             ("osc_energy", signals.get("osc_energy", 0)),
             ("stop_go", signals.get("stop_go", 0)),
             ("hand_fidget", signals.get("hand_fidget", 0)),
+            ("movinet_p", signals.get("movinet_pressure", 0)),
         ]
         
         for name, val in keys:
@@ -68,21 +70,8 @@ class Visualizer:
         :param buffers: dict containing lists for plots
         """
         plot_data = {
-            "velocity": buffers["velocity"],
-            "head_yaw": buffers["head_yaw"],
-            "hand_fidget": buffers["hand_fidget"],
-            # motion_E uses x-axis len, assuming it plots against time/frame count
-            # In original code: "motion_E": list(range(len(centroid_buf))) -> This plotted a straight line x=y effectively? 
-            # Original code: "motion_E": axs[3].plot([], [], label="motion_E")[0]
-            # Original update: "motion_E": list(range(len(centroid_buf)))
-            # line.set_data(xdata, ydata) where xdata = list(range(len(ydata)))
-            # So ydata was range(len(centroid)). 
-            # Wait, original code:
-            # "motion_E": list(range(len(centroid_buf))),
-            # line.set_data(xdata, ydata)
-            # This means it was plotting index vs index.
-            # I will preserve this behavior for now to match original functionality.
-            "motion_E": list(range(buffers["motion_E_len"]))
+            "movinet_p0": buffers.get("movinet_p0", []),
+            "movinet_p1": buffers.get("movinet_p1", []),
         }
 
         for key, line in self.lines.items():
@@ -90,11 +79,7 @@ class Visualizer:
             xdata = list(range(len(ydata)))
             line.set_data(xdata, ydata)
             
-            if len(ydata) > 0:
-                line.axes.set_ylim(
-                    min(ydata) - 1e-3,
-                    max(ydata) + 1e-3
-                )
+            # Fixed Y-limit 0-1 for probabilities
         
         plt.pause(0.001)
 

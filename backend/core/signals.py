@@ -23,14 +23,32 @@ class SignalProcessor:
         self.speed_smoother = EMASmoother(Config.EMA_ALPHA)
         self.vx_smoother = EMASmoother(Config.EMA_ALPHA)
         self.head_yaw_smoother = EMASmoother(Config.EMA_ALPHA)
+        self.head_yaw_smoother = EMASmoother(Config.EMA_ALPHA)
         self.hand_energy_smoother = EMASmoother(Config.EMA_ALPHA)
+        self.movinet_smoother = EMASmoother(Config.MOVINET_EMA_ALPHA)
 
-    def update(self, landmarks_xy, current_time):
+        self.current_movinet_prob = 0.0
+        
+        # Debug Buffers for MoViNet
+        self.movinet_p0_buf = deque(maxlen=Config.WINDOW)
+        self.movinet_p1_buf = deque(maxlen=Config.WINDOW)
+
+    def update(self, landmarks_xy, current_time, movinet_probs=None):
         """
         Update buffers with new landmark data.
         :param landmarks_xy: np.array of shape (N, 2)
         :param current_time: float (timestamp)
+        :param movinet_probs: np.array [p0, p1]
         """
+        if movinet_probs is None: movinet_probs = np.array([0.0, 0.0])
+        
+        # Update MoViNet signal (using index 0 as 'fight' per previous logic, but buffering both)
+        # Using simple raw buffering for graph
+        self.movinet_p0_buf.append(movinet_probs[0])
+        self.movinet_p1_buf.append(movinet_probs[1])
+        
+        # Keep pressure logic on index 0 for now (reverted logic)
+        self.current_movinet_prob = self.movinet_smoother.update(movinet_probs[0])
         # Track last successful detection
         self.last_landmark_time = current_time
 
@@ -88,8 +106,13 @@ class SignalProcessor:
         self.prev_wrists = wrists
         self.hand_energy_buf.append(hand_energy)
 
-    def update_empty(self):
+    def update_empty(self, movinet_probs=None):
         """Update buffers when no pose is detected."""
+        if movinet_probs is None: movinet_probs = np.array([0.0, 0.0])
+        self.movinet_p0_buf.append(movinet_probs[0])
+        self.movinet_p1_buf.append(movinet_probs[1])
+        
+        self.current_movinet_prob = self.movinet_smoother.update(movinet_probs[0])
         self.vx_buf.append(0.0)
         self.speed_buf.append(0.0)
         self.head_yaw_buf.append(0.0)
@@ -203,6 +226,31 @@ class SignalProcessor:
             if len(self.hand_energy_buf) > 1 else 0.0
         )
         
+        # MoViNet Pressure
+        # Base pressure (deviation from baseline)
+        delta = self.current_movinet_prob - Config.MOVINET_PRESSURE_THRESH
+        base_pressure = max(0.0, delta) * Config.MOVINET_PRESSURE_GAIN
+        
+        # Slope pressure (positive rate of change)
+        # We need previous smoothed value. The smoother doesn't expose it directly 
+        # but we can infer it or just track it. 
+        # self.current_movinet_prob is the current smoothed value.
+        # We need the previous one. Let's add self.prev_movinet_prob to init.
+        # For now, let's look at the buffer? 
+        # self.movinet_smoother.value is the current one.
+        # Check EMASmoother implementation?
+        # Let's just use a simple tracking variable in the class.
+        
+        if not hasattr(self, 'prev_movinet_smoothed'):
+             self.prev_movinet_smoothed = self.current_movinet_prob
+             
+        dp = self.current_movinet_prob - self.prev_movinet_smoothed
+        slope_pressure = max(0.0, dp) * Config.MOVINET_SLOPE_GAIN
+        
+        self.prev_movinet_smoothed = self.current_movinet_prob
+        
+        movinet_pressure = base_pressure + slope_pressure
+        
         return {
             "presence_s": presence_duration,
             "net_disp": net_displacement,
@@ -215,6 +263,7 @@ class SignalProcessor:
             "osc_energy": oscillation_energy,
             "stop_go": stop_go,
             "hand_fidget": hand_fidget,
+            "movinet_pressure": movinet_pressure,
         }
 
     def get_buffers(self):
@@ -222,5 +271,7 @@ class SignalProcessor:
             "velocity": list(self.speed_buf),
             "head_yaw": list(self.head_yaw_buf),
             "hand_fidget": list(self.hand_energy_buf),
+            "movinet_p0": list(self.movinet_p0_buf),
+            "movinet_p1": list(self.movinet_p1_buf),
             "motion_E_len": len(self.centroid_buf) # Just returning length for x-axis gen
         }

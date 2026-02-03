@@ -6,6 +6,7 @@ A behavioral analysis system for smart doorbells that detects suspicious intent 
 - **Pose Estimation**: Powered by MediaPipe.
 - **Signal Extraction**: Calculates signals like velocity, head yaw, hand fidgeting, and pacing (oscillation).
 - **Intent Analysis**: Fuses detection signals to classify behavior as CALM, UNUSUAL, SUSPICIOUS, or THREAT.
+- **Violence Detection**: Integrates MoViNet (Action Recognition) to treat violence probability as a "pressure" signal for intent modulation.
 - **Hysteresis & Smoothing**: Uses EMA smoothing and threshold hysteresis for stable signal processing.
 
 ## Structure

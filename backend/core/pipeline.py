@@ -8,6 +8,7 @@ from backend.core.pose_detector import PoseDetector
 from backend.core.signals import SignalProcessor
 from backend.core.visualization import Visualizer
 from backend.core.intent import IntentEngine
+from backend.core.violence import ViolenceWorker
 
 class Pipeline:
     def __init__(self):
@@ -18,6 +19,10 @@ class Pipeline:
         self.visualizer = Visualizer()
         self.cap = cv2.VideoCapture(0)
         self.frame_count = 0
+        
+        # Initialize Violence Worker (Daemon Thread)
+        self.violence_worker = ViolenceWorker()
+        self.violence_worker.start()
 
     def run(self):
         if not self.cap.isOpened():
@@ -33,6 +38,10 @@ class Pipeline:
 
             self.frame_count += 1
             t_ms = self.frame_count * int(1000 / self.config.FPS)
+            
+            # Send frame to violence worker
+            self.violence_worker.process_frame(frame)
+            movinet_probs = self.violence_worker.get_latest_probability()
 
             # Detect
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -44,9 +53,9 @@ class Pipeline:
             if result.pose_landmarks:
                 lm = result.pose_landmarks[0]
                 lm_xy = np.array([(l.x, l.y) for l in lm])
-                self.processor.update(lm_xy, current_clock_time)
+                self.processor.update(lm_xy, current_clock_time, movinet_probs)
             else:
-                self.processor.update_empty()
+                self.processor.update_empty(movinet_probs)
 
             # Compute Signals
             signals = self.processor.compute_signals(current_clock_time)

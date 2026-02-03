@@ -60,9 +60,11 @@ class IntentEngine:
         other_score = 0.0
         total_other_weight = 0.0
         
-        # Calculate score from non-presence signals
+        # Calculate score from non-presence, non-Movinet signals
         for key, weight in self.config.WEIGHTS.items():
-            if key == "presence_s": continue # Ensure we don't double count if user put it there
+            if key == "presence_s": continue
+            if key == "movinet_pressure": continue # Handle separately
+            
             other_val = norm.get(key, 0.0)
             other_score += other_val * weight
             total_other_weight += weight
@@ -73,23 +75,25 @@ class IntentEngine:
         norm["presence_s"] = presence_val # Update for return
 
         # Gating: If other signals are high, presence matters more.
-        # Base weight for presence? Let's assume a base weight implicit or defined.
-        # Since "presence_s" is NOT in the WEIGHTS dict in config (I should check), 
-        # I need to handle it. 
-        # Actually I didn't verify if presence_s is in WEIGHTS. 
-        # In my previous config edit, I didn't add it. Good.
-        
-        # Let's define a base influence. 
-        # IF total score is roughly [0, 1], lets say presence adds to it.
-        
-        # Gating Factor: 
-        # effective_presence_weight = BASE * (1 + other_score * GATING_FACTOR)
-        # Let's pick a BASE weight, say 0.1 similar to others.
         BASE_PRESENCE_WEIGHT = 0.1
+        gated_presence_weight = BASE_PRESENCE_WEIGHT * (1 + other_score * self.config.PRESENCE_GATING_FACTOR)
         
-        gated_weight = BASE_PRESENCE_WEIGHT * (1 + other_score * self.config.PRESENCE_GATING_FACTOR)
+        # MoViNet Gating Logic
+        # It acts as a pressure signal, only effective if there is already some "base" intent/threat.
+        # We don't want it to trigger alerts purely on visual noise if the person is standing still (pose signals low).
         
-        raw_score = other_score + (presence_val * gated_weight)
+        movinet_pressure = norm.get("movinet_pressure", 0.0)
+        movinet_weight = self.config.WEIGHTS.get("movinet_pressure", 0.15)
+        
+        movinet_contribution = 0.0
+        # Only add if base score (other + presence) is above a small threshold
+        # Or just checking "other_score" might be safer (ignore presence for trigger).
+        # Let's use 'other_score' (motion/behavior).
+        
+        if other_score > 0.05:
+            movinet_contribution = movinet_pressure * movinet_weight
+        
+        raw_score = other_score + (presence_val * gated_presence_weight) + movinet_contribution
         
         # Clip raw score to [0, 1]
         raw_score = min(max(raw_score, 0.0), 1.0)

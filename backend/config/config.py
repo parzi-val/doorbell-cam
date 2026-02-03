@@ -2,6 +2,7 @@
 class Config:
     # Model settings
     MODEL_PATH = "models/pose/pose_landmarker_lite.task"
+    MOVINET_MODEL_PATH = "models/violence/model.tflite"
     
     # Camera / Pipeline settings
     FPS = 30
@@ -36,6 +37,12 @@ class Config:
     # Presence Logic
     PRESENCE_RESET_TIMEOUT = 2.0 # seconds without detection to reset presence
 
+    # MoViNet settings
+    MOVINET_EMA_ALPHA = 0.1
+    MOVINET_PRESSURE_THRESH = 0.1 # Lowered for testing visibility
+    MOVINET_PRESSURE_GAIN = 2.0
+    MOVINET_SLOPE_GAIN = 1.0
+
 class IntentConfig:
     # Normalization Max Values (Approximate upper bounds)
     NORM_MAX = {
@@ -48,7 +55,8 @@ class IntentConfig:
         "head_down": 1.0,      # fraction
         "dir_flip": 5,         # count per window
         "stop_go": 5,          # count per window
-        "presence_s": 60       # seconds (maybe less relevant for immediate intent?)
+        "presence_s": 60,      # seconds (maybe less relevant for immediate intent?)
+        "movinet_pressure": 1.0 # Normalized pressure derived from probability
     }
 
     # Fusion Weights (Sum doesn't strictly need to be 1, but intent score should be 0-1 range usually)
@@ -62,7 +70,8 @@ class IntentConfig:
         "osc_energy": 0.15,
         "head_down": 0.1,
         "dir_flip": 0.1,
-        "stop_go": 0.1
+        "stop_go": 0.1,
+        "movinet_pressure": 0.15
     }
 
     # Intent Smoothing
