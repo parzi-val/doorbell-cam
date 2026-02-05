@@ -100,7 +100,8 @@ class ViolenceDetector:
         if len(probs_np.shape) == 2:
              # Log raw probabilities for verification
              if np.max(probs_np[0]) > 0.1: 
-                 print(f"MoViNet Raw: {probs_np[0]}")
+                 # print(f"MoViNet Raw: {probs_np[0]}")
+                 pass
              
              return probs_np[0] # Return [p0, p1]
              

@@ -85,15 +85,18 @@ class IntentEngine:
         movinet_pressure = norm.get("movinet_pressure", 0.0)
         movinet_weight = self.config.WEIGHTS.get("movinet_pressure", 0.15)
         
-        movinet_contribution = 0.0
-        # Only add if base score (other + presence) is above a small threshold
-        # Or just checking "other_score" might be safer (ignore presence for trigger).
-        # Let's use 'other_score' (motion/behavior).
+        # Calculate initial raw score
+        raw_score = other_score + (presence_val * gated_presence_weight)
         
-        if other_score > 0.05:
-            movinet_contribution = movinet_pressure * movinet_weight
+        # Only add movinet if base score (other + presence) is above a small threshold
+        # Let's use 'other_score' (motion/behavior) as the primary trigger for movinet.
+        if other_score > 0.3: # Only if significant threat exists from other signals
+            raw_score += movinet_pressure * movinet_weight
         
-        raw_score = other_score + (presence_val * gated_presence_weight) + movinet_contribution
+        # HARDBOOST: Weapon Detection
+        if signals.get("weapon_confirmed", False):
+            # Override to at least HARDBOOST_VALUE
+            raw_score = max(raw_score, self.config.INTENT_HARDBOOST_VALUE)
         
         # Clip raw score to [0, 1]
         raw_score = min(max(raw_score, 0.0), 1.0)

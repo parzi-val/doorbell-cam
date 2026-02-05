@@ -43,6 +43,16 @@ class Config:
     MOVINET_PRESSURE_GAIN = 2.0
     MOVINET_SLOPE_GAIN = 1.0
 
+    # Weapon Detection Settings
+    WEAPON_MODEL_PATH = "models/weapons/best.onnx"
+    WEAPON_IMG_SIZE = 640
+    WEAPON_CONF_THRESH = 0.6
+    WEAPON_IOU_THRESH = 0.45
+    WEAPON_DEBOUNCE_FRAMES = 3
+    WEAPON_COOLDOWN_S = 20.0
+    # Update these with actual class names from the user's model
+    WEAPON_CLASS_NAMES = ['Pistol', 'Knife', 'Rifle', 'Bat'] # Example, user said 4 classes
+
 class IntentConfig:
     # Normalization Max Values (Approximate upper bounds)
     NORM_MAX = {
@@ -58,6 +68,8 @@ class IntentConfig:
         "presence_s": 60,      # seconds (maybe less relevant for immediate intent?)
         "movinet_pressure": 1.0 # Normalized pressure derived from probability
     }
+    
+    INTENT_HARDBOOST_VALUE = 0.8
 
     # Fusion Weights (Sum doesn't strictly need to be 1, but intent score should be 0-1 range usually)
     # We will clip the final score.
@@ -78,9 +90,9 @@ class IntentConfig:
     INTENT_ALPHA = 0.1 # Slower smoothing for stability
 
     # Threat Thresholds
-    TH_CALM = 0.25
-    TH_UNUSUAL = 0.45
-    TH_SUSPICIOUS = 0.65
+    TH_CALM = 0.4
+    TH_UNUSUAL = 0.55
+    TH_SUSPICIOUS = 0.7
     # THREAT >= 0.65
 
     # Presence Logic

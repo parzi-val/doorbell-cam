@@ -9,8 +9,6 @@ class Visualizer:
         
         # Matplotlib setup
         plt.ion()
-        # Matplotlib setup
-        plt.ion()
         # DEBUG: Only plotting MoViNet classes as requested
         self.fig, self.ax = plt.subplots(1, 1, figsize=(7, 4))
         self.lines = {
@@ -22,18 +20,50 @@ class Visualizer:
         self.ax.set_xlim(0, self.config.WINDOW)
         self.ax.set_ylim(0, 1.0)
 
-    def draw_overlay(self, frame, signals, intent_score=0.0, threat_level="CALM"):
+    def draw_overlay(self, frame, signals, intent_score=0.0, threat_level="CALM", weapon_detections=None):
         """
-        Draw text overlay on the frame.
-        :param frame: cv2 image
-        :param signals: dict of signal values
-        :param intent_score: float
-        :param threat_level: str
+        Draw signal values and intent score on the frame.
         """
+        if weapon_detections is None: weapon_detections = []
+        
+        h, w, _ = frame.shape
+        
+        # Draw Weapon Detections first (under overlay)
+        # ... (Already detected) ...
+        # But wait, replace call replaces range. I need to keep the drawing loop? 
+        # The drawing loop is lines 34-43 in original file which is inside current view.
+        # I should output the WHOLE function or be careful.
+        # I will replace from __init__ down to keys list.
+        
+        for det in weapon_detections:
+            box = det['box']
+            conf = det['confidence']
+            name = det['class_name']
+            
+            # Color: Red for high confidence
+            color = (0, 0, 255) 
+            cv2.rectangle(frame, (box[0], box[1]), (box[2], box[3]), color, 2)
+            label = f"{name} {conf:.2f}"
+            cv2.putText(frame, label, (box[0], box[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
+        # Background panel for text
+        panel_w = 280
+        
         y = 20
         # Intent Overlay
-        cv2.putText(frame, f"INTENT: {intent_score:.2f} | {threat_level}", (10, y), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255) if intent_score > 0.5 else (0, 255, 0), 2)
+        # Logic: Red if weapon confirmed or high score
+        color = (0, 255, 0)
+        is_weapon = signals.get('weapon_confirmed', False)
+        
+        if is_weapon:
+            score_str = f"INTENT: {intent_score:.2f} | WEAPON DETECTED"
+            color = (0, 0, 255)
+        else:
+            score_str = f"INTENT: {intent_score:.2f} | {threat_level}"
+            if intent_score > 0.5: color = (0, 0, 255)
+            elif intent_score > 0.3: color = (0, 165, 255) # Orange-ish
+
+        cv2.putText(frame, score_str, (10, y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
         y += 30
 
         # signal keys to display in order
@@ -50,6 +80,7 @@ class Visualizer:
             ("stop_go", signals.get("stop_go", 0)),
             ("hand_fidget", signals.get("hand_fidget", 0)),
             ("movinet_p", signals.get("movinet_pressure", 0)),
+            ("weapon_confirmed", 1.0 if is_weapon else 0.0),
         ]
         
         for name, val in keys:

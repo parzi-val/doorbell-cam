@@ -32,15 +32,26 @@ class SignalProcessor:
         # Debug Buffers for MoViNet
         self.movinet_p0_buf = deque(maxlen=Config.WINDOW)
         self.movinet_p1_buf = deque(maxlen=Config.WINDOW)
+        
+        # Weapon Debounce Buffer
+        self.weapon_debounce_buf = deque(maxlen=Config.WEAPON_DEBOUNCE_FRAMES)
+        self.weapon_cooldown_expiry = 0.0
 
-    def update(self, landmarks_xy, current_time, movinet_probs=None):
+    def update(self, landmarks_xy, current_time, movinet_probs=None, weapon_detections=None):
         """
         Update buffers with new landmark data.
         :param landmarks_xy: np.array of shape (N, 2)
         :param current_time: float (timestamp)
         :param movinet_probs: np.array [p0, p1]
+        :param weapon_detections: list of dicts
         """
         if movinet_probs is None: movinet_probs = np.array([0.0, 0.0])
+        if weapon_detections is None: weapon_detections = []
+        
+        # Weapon Logic
+        # Check if any detection > threshold (already filtered by worker, but good to be safe)
+        has_weapon = len(weapon_detections) > 0
+        self.weapon_debounce_buf.append(has_weapon)
         
         # Update MoViNet signal (using index 0 as 'fight' per previous logic, but buffering both)
         # Using simple raw buffering for graph
@@ -106,9 +117,13 @@ class SignalProcessor:
         self.prev_wrists = wrists
         self.hand_energy_buf.append(hand_energy)
 
-    def update_empty(self, movinet_probs=None):
+    def update_empty(self, movinet_probs=None, weapon_detections=None):
         """Update buffers when no pose is detected."""
         if movinet_probs is None: movinet_probs = np.array([0.0, 0.0])
+        if weapon_detections is None: weapon_detections = []
+        
+        has_weapon = len(weapon_detections) > 0
+        self.weapon_debounce_buf.append(has_weapon)
         self.movinet_p0_buf.append(movinet_probs[0])
         self.movinet_p1_buf.append(movinet_probs[1])
         
@@ -251,6 +266,21 @@ class SignalProcessor:
         
         movinet_pressure = base_pressure + slope_pressure
         
+        # Weapon Confirmation (Debounced & Cooldown)
+        # Only confirm if ALL frames in the buffer are True
+        raw_weapon_confirmed = False
+        if len(self.weapon_debounce_buf) == self.weapon_debounce_buf.maxlen:
+            raw_weapon_confirmed = all(self.weapon_debounce_buf)
+            
+        # Update Cooldown
+        if raw_weapon_confirmed:
+            self.weapon_cooldown_expiry = self.current_frame_time + Config.WEAPON_COOLDOWN_S
+            
+        # Check active status
+        weapon_confirmed = False
+        if self.current_frame_time < self.weapon_cooldown_expiry:
+             weapon_confirmed = True
+        
         return {
             "presence_s": presence_duration,
             "net_disp": net_displacement,
@@ -264,6 +294,7 @@ class SignalProcessor:
             "stop_go": stop_go,
             "hand_fidget": hand_fidget,
             "movinet_pressure": movinet_pressure,
+            "weapon_confirmed": weapon_confirmed
         }
 
     def get_buffers(self):
