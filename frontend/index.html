@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doorbell Security Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Security Events</h1>
+            <div id="status">Loading...</div>
+        </header>
+        
+        <main id="event-grid" class="grid">
+            <!-- Events will be injected here -->
+        </main>
+    </div>
+
+    <!-- Video Modal -->
+    <div id="video-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <div class="video-container">
+                <video id="main-video" controls autoplay></video>
+            </div>
+            <div class="info-panel">
+                <h2 id="modal-title">Event Details</h2>
+                <p class="timestamp" id="modal-timestamp"></p>
+                
+                <div class="tags" id="modal-tags">
+                    <!-- Tags like Weapon, Threat Level -->
+                </div>
+
+                <div class="summary-box">
+                    <h3>AI Summary</h3>
+                    <p id="modal-summary">Genering summary...</p>
+                </div>
+
+                <div class="stats-grid" id="modal-stats">
+                    <!-- Stat bubbles -->
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-accurate">Accurate</button>
+                    <button class="btn btn-inaccurate">Inaccurate</button>
+                    <button class="btn btn-friendly">Add Friendly</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-import threading
+import multiprocessing
 import queue
 import time
 import numpy as np
@@ -72,30 +72,8 @@ class ViolenceDetector:
         self.states = outputs # The rest are the new states
         
         # Process logits
-        # Shape usually [1, 1, 2] (NoFight, Fight) or [1, 1, num_classes]
-        # Or [1, 1] if binary? 
-        # Notebook says: probs = tf.nn.softmax(logits)
-        # And: CLASSES = ['Fight','No_Fight'] -> Wait.
-        # Notebook cell 6: CLASSES = ['Fight','No_Fight']
-        # But get_top_k uses this list.
-        # We need to be careful about index order.
-        # Usually alphabetical unless specified? 
-        # MoViNet pretrained on Kinetics-600 has 600 classes.
-        # The user says "binary: fight / no_fight".
-        # If the user model is custom, let's look at the output shape.
-        
         probs = tf.nn.softmax(logits)
         probs_np = probs.numpy()
-        
-        # Debug print to fix shape error
-        # print(f"DEBUG: probs_np.shape = {probs_np.shape}")
-        
-        # Safe indexing based on observed error "array is 2-dimensional"
-        # Most likely [1, 2] -> Batch 1, 2 Classes.
-        # If [1, 2], probs_np[0] is [p0, p1]
-        # We want Class 0 (assumed Fight for now based on notebook order in one cell, but inverted in another.. wait)
-        # Notebook: CLASSES = ['Fight','No_Fight']
-        # If model outputs [P(Fight), P(NoFight)], then index 0 is Fight.
         
         if len(probs_np.shape) == 2:
              # Log raw probabilities for verification
@@ -110,45 +88,56 @@ class ViolenceDetector:
         else:
              return np.array([0.0, 0.0])
 
-class ViolenceWorker(threading.Thread):
+class ViolenceWorker(multiprocessing.Process):
     def __init__(self, model_path=Config.MOVINET_MODEL_PATH):
         super().__init__()
         self.daemon = True
-        self.queue = queue.Queue(maxsize=1) # Drop old frames if busy
-        try:
-            self.detector = ViolenceDetector(model_path)
-            self.running = True
-        except Exception as e:
-            print(f"Failed to load MoViNet model: {e}")
-            self.detector = None
-            self.running = False
-            
-        self.latest_prob = np.array([0.0, 0.0])
-        self.lock = threading.Lock()
+        self.model_path = model_path
+        self.queue = multiprocessing.Queue(maxsize=1) 
+        self.result_queue = multiprocessing.Queue(maxsize=1)
+        self.running = multiprocessing.Value('b', True) # Boolean flag
 
     def process_frame(self, frame):
-        if not self.running: return
-        
-        # Non-blocking put. If full, drop frame (skip inference to catch up)
+        if not self.running.value: return
         try:
             self.queue.put_nowait(frame)
         except queue.Full:
             pass 
 
     def get_latest_probability(self):
-        with self.lock:
-            return self.latest_prob
+        try:
+            return self.result_queue.get_nowait()
+        except queue.Empty:
+            return None # Return None to indicate no new update, or handle differently in pipeline
+
+    def stop(self):
+        self.running.value = False
 
     def run(self):
-        if not self.detector: return
+        # Initialize model INSIDE the process to avoid pickling issues
+        try:
+            detector = ViolenceDetector(self.model_path)
+            last_prob = np.array([0.0, 0.0])
+        except Exception as e:
+            print(f"Failed to load MoViNet model in worker: {e}")
+            return
         
-        while self.running:
-            frame = self.queue.get()
+        while self.running.value:
             try:
-                prob = self.detector.predict(frame)
-                with self.lock:
-                    self.latest_prob = prob
+                frame = self.queue.get(timeout=0.1)
+            except queue.Empty:
+                continue
+                
+            try:
+                prob = detector.predict(frame)
+                
+                # Update result
+                # We want to clear the old result if possible to keep it fresh
+                try:
+                    self.result_queue.get_nowait() # consume old
+                except queue.Empty:
+                    pass
+                self.result_queue.put(prob)
+                
             except Exception as e:
                 print(f"Violence inference error: {e}")
-            finally:
-                self.queue.task_done()

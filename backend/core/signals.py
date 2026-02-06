@@ -23,11 +23,11 @@ class SignalProcessor:
         self.speed_smoother = EMASmoother(Config.EMA_ALPHA)
         self.vx_smoother = EMASmoother(Config.EMA_ALPHA)
         self.head_yaw_smoother = EMASmoother(Config.EMA_ALPHA)
-        self.head_yaw_smoother = EMASmoother(Config.EMA_ALPHA)
         self.hand_energy_smoother = EMASmoother(Config.EMA_ALPHA)
         self.movinet_smoother = EMASmoother(Config.MOVINET_EMA_ALPHA)
 
         self.current_movinet_prob = 0.0
+        self.prev_movinet_smoothed = 0.0
         
         # Debug Buffers for MoViNet
         self.movinet_p0_buf = deque(maxlen=Config.WINDOW)
@@ -255,9 +255,6 @@ class SignalProcessor:
         # self.movinet_smoother.value is the current one.
         # Check EMASmoother implementation?
         # Let's just use a simple tracking variable in the class.
-        
-        if not hasattr(self, 'prev_movinet_smoothed'):
-             self.prev_movinet_smoothed = self.current_movinet_prob
              
         dp = self.current_movinet_prob - self.prev_movinet_smoothed
         slope_pressure = max(0.0, dp) * Config.MOVINET_SLOPE_GAIN
@@ -274,12 +271,14 @@ class SignalProcessor:
             
         # Update Cooldown
         if raw_weapon_confirmed:
-            self.weapon_cooldown_expiry = self.current_frame_time + Config.WEAPON_COOLDOWN_S
+            self.weapon_cooldown_expiry = current_time + Config.WEAPON_COOLDOWN_S
             
         # Check active status
         weapon_confirmed = False
-        if self.current_frame_time < self.weapon_cooldown_expiry:
+        if current_time < self.weapon_cooldown_expiry:
              weapon_confirmed = True
+             
+        weapon_cooldown = max(0.0, self.weapon_cooldown_expiry - current_time)
         
         return {
             "presence_s": presence_duration,
@@ -294,7 +293,8 @@ class SignalProcessor:
             "stop_go": stop_go,
             "hand_fidget": hand_fidget,
             "movinet_pressure": movinet_pressure,
-            "weapon_confirmed": weapon_confirmed
+            "weapon_confirmed": weapon_confirmed,
+            "weapon_cooldown": weapon_cooldown
         }
 
     def get_buffers(self):

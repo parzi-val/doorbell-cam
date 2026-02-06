@@ -1,3 +1,4 @@
+import os
 
 class Config:
     # Model settings
@@ -53,6 +54,15 @@ class Config:
     # Update these with actual class names from the user's model
     WEAPON_CLASS_NAMES = ['Pistol', 'Knife', 'Rifle', 'Bat'] # Example, user said 4 classes
 
+    # Clip & Logging Settings
+    # Clip & Logging Settings
+    LOG_DIR = "logs"
+    CLIP_DURATION_SECONDS = 60
+    CLIP_COOLDOWN_SECONDS = 60
+    
+    # GenAI
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
 class IntentConfig:
     # Normalization Max Values (Approximate upper bounds)
     NORM_MAX = {
@@ -91,7 +101,7 @@ class IntentConfig:
 
     # Threat Thresholds
     TH_CALM = 0.4
-    TH_UNUSUAL = 0.55
+    TH_UNUSUAL = 0.6
     TH_SUSPICIOUS = 0.7
     # THREAT >= 0.65
 

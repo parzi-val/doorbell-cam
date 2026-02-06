@@ -20,7 +20,7 @@ class Visualizer:
         self.ax.set_xlim(0, self.config.WINDOW)
         self.ax.set_ylim(0, 1.0)
 
-    def draw_overlay(self, frame, signals, intent_score=0.0, threat_level="CALM", weapon_detections=None):
+    def draw_overlay(self, frame, signals, intent_score=0.0, threat_level="CALM", weapon_detections=None, is_recording=False):
         """
         Draw signal values and intent score on the frame.
         """
@@ -37,8 +37,8 @@ class Visualizer:
         
         for det in weapon_detections:
             box = det['box']
-            conf = det['confidence']
-            name = det['class_name']
+            conf = det['score']
+            name = det['class']
             
             # Color: Red for high confidence
             color = (0, 0, 255) 
@@ -52,6 +52,10 @@ class Visualizer:
         y = 20
         # Intent Overlay
         # Logic: Red if weapon confirmed or high score
+        if is_recording:
+            cv2.circle(frame, (30, 30), 10, (0, 0, 255), -1) # Red dot
+            cv2.putText(frame, "REC", (50, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
+        
         color = (0, 255, 0)
         is_weapon = signals.get('weapon_confirmed', False)
         
@@ -81,6 +85,7 @@ class Visualizer:
             ("hand_fidget", signals.get("hand_fidget", 0)),
             ("movinet_p", signals.get("movinet_pressure", 0)),
             ("weapon_confirmed", 1.0 if is_weapon else 0.0),
+            ("weapon_timer", signals.get("weapon_cooldown", 0)),
         ]
         
         for name, val in keys:
