@@ -18,6 +18,7 @@ class SignalProcessor:
         self.prev_wrists = None
         self.start_time = None # Set this when processing starts
         self.last_landmark_time = 0.0 # Track last successful detection
+        self.last_move_time = None # Track stationary time for loitering
 
         # Smoothers
         self.speed_smoother = EMASmoother(Config.EMA_ALPHA)
@@ -33,9 +34,37 @@ class SignalProcessor:
         self.movinet_p0_buf = deque(maxlen=Config.WINDOW)
         self.movinet_p1_buf = deque(maxlen=Config.WINDOW)
         
-        # Weapon Debounce Buffer
         self.weapon_debounce_buf = deque(maxlen=Config.WEAPON_DEBOUNCE_FRAMES)
         self.weapon_cooldown_expiry = 0.0
+
+    def reset(self):
+        """Reset all state and buffers."""
+        self.centroid_buf.clear()
+        self.vx_buf.clear()
+        self.speed_buf.clear()
+        self.head_yaw_buf.clear()
+        self.head_down_buf.clear()
+        self.hand_energy_buf.clear()
+        self.movinet_p0_buf.clear()
+        self.movinet_p1_buf.clear()
+        self.weapon_debounce_buf.clear()
+        
+        self.first_centroid = None
+        self.prev_wrists = None
+        self.start_time = None
+        self.last_landmark_time = 0.0
+        self.last_move_time = None
+        
+        self.current_movinet_prob = 0.0
+        self.prev_movinet_smoothed = 0.0
+        self.weapon_cooldown_expiry = 0.0
+        
+        # Reset smoothers
+        self.speed_smoother.reset()
+        self.vx_smoother.reset()
+        self.head_yaw_smoother.reset()
+        self.hand_energy_smoother.reset()
+        self.movinet_smoother.reset()
 
     def update(self, landmarks_xy, current_time, movinet_probs=None, weapon_detections=None):
         """
@@ -158,10 +187,32 @@ class SignalProcessor:
         hip_mid = self.centroid_buf[-1]
         net_displacement = dist(self.first_centroid, hip_mid) if self.first_centroid is not None else 0.0
 
-        local_motion_energy = sum(
-            dist(self.centroid_buf[i], self.centroid_buf[i - 1])
-            for i in range(1, len(self.centroid_buf))
-        )
+        # Motion Energy: Sum of speed * DT over the window
+        # Reflects "how much have I moved recently" (path length)
+        local_motion_energy = sum(self.speed_buf) * Config.DT
+        
+        centroid_velocity = np.mean(self.speed_buf) if self.speed_buf else 0.0
+        
+        # Loitering Score
+        # "Standing at relatively the same place for a while"
+        # Logic: If speed is low for > THRESH seconds -> loitering
+        
+        if self.last_move_time is None:
+             self.last_move_time = current_time
+             
+        is_moving = centroid_velocity > Config.LOITERING_SPEED_THRESH
+        
+        if is_moving:
+            self.last_move_time = current_time
+            
+        time_stationary = max(0.0, current_time - self.last_move_time)
+        
+        loitering_score = 0.0
+        if time_stationary > Config.LOITERING_TIME_THRESH:
+            # Ramp up based on time beyond threshold
+            over_time = time_stationary - Config.LOITERING_TIME_THRESH
+            # Clamp 0-1 over 5 seconds
+            loitering_score = min(over_time / 5.0, 1.0)
 
         head_yaw_rate = np.mean(np.abs(np.diff(self.head_yaw_buf))) if len(self.head_yaw_buf) > 1 else 0.0
 
@@ -183,8 +234,6 @@ class SignalProcessor:
                     head_oscillation += 1
 
         head_down_fraction = sum(self.head_down_buf) / len(self.head_down_buf) if self.head_down_buf else 0.0
-
-        centroid_velocity = np.mean(self.speed_buf) if self.speed_buf else 0.0
 
         # Centroid-based Direction Reversal & Oscillation Energy
         direction_reversal = 0
@@ -247,15 +296,6 @@ class SignalProcessor:
         base_pressure = max(0.0, delta) * Config.MOVINET_PRESSURE_GAIN
         
         # Slope pressure (positive rate of change)
-        # We need previous smoothed value. The smoother doesn't expose it directly 
-        # but we can infer it or just track it. 
-        # self.current_movinet_prob is the current smoothed value.
-        # We need the previous one. Let's add self.prev_movinet_prob to init.
-        # For now, let's look at the buffer? 
-        # self.movinet_smoother.value is the current one.
-        # Check EMASmoother implementation?
-        # Let's just use a simple tracking variable in the class.
-             
         dp = self.current_movinet_prob - self.prev_movinet_smoothed
         slope_pressure = max(0.0, dp) * Config.MOVINET_SLOPE_GAIN
         
@@ -293,6 +333,7 @@ class SignalProcessor:
             "stop_go": stop_go,
             "hand_fidget": hand_fidget,
             "movinet_pressure": movinet_pressure,
+            "loitering_score": loitering_score,
             "weapon_confirmed": weapon_confirmed,
             "weapon_cooldown": weapon_cooldown
         }

@@ -37,3 +37,6 @@ ENV/
 
 .env
 scripts/
+test-videos/*
+
+node_modules/

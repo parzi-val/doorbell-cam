@@ -13,20 +13,14 @@ class Config:
     
     # Signal Thresholds / Hysteresis
     HEAD_YAW_HYST = 0.02  # Lowered from 0.05
-    VELOCITY_HYST = 0.5   # pixel/sec or whatever unit input is. Wait, input is normalized? 
-                          # Input to speed is pixel distance. 
-                          # If resolution is e.g. 640x480, 0.5 is tiny.
-                          # Original code had vx = dx / DT. dx is in pixels implies vx in px/s.
-                          # Let's assume reasonable defaults. 
-                          # If normalized coordinates were used, it would be different.
-                          # Pose landmarks are normalized [0,1].
-                          # Original code: l.x, l.y are normalized.
-                          # So distance is normalized 0..1.
-                          # Speed = dist / DT. DT=1/30. speed ~ 30 * dist.
-                          # If dist is 0.01 (small move), speed is 0.3.
     VELOCITY_HYST = 0.1   # ~0.003 movement per frame
     CENTROID_DX_THRESH = 0.005 # Normalized units for direction flip
     STOP_THRESHOLD = 0.2  # Speed below this is "stopped"
+    
+    # Loitering
+    LOITERING_TIME_THRESH = 4.0 # Seconds before loitering signal starts ramping
+    LOITERING_DISP_THRESH = 0.3 # Max net displacement to consider "in place"
+    LOITERING_SPEED_THRESH = 0.05 # Speed below which is considered "stationary" for loitering
     
     # Landmark indices
     NOSE = 0
@@ -51,8 +45,7 @@ class Config:
     WEAPON_IOU_THRESH = 0.45
     WEAPON_DEBOUNCE_FRAMES = 3
     WEAPON_COOLDOWN_S = 20.0
-    # Update these with actual class names from the user's model
-    WEAPON_CLASS_NAMES = ['Pistol', 'Knife', 'Rifle', 'Bat'] # Example, user said 4 classes
+    WEAPON_CLASS_NAMES = ['Gun', 'Explosive', 'Grenade', 'Knife']
 
     # Clip & Logging Settings
     # Clip & Logging Settings
@@ -60,14 +53,18 @@ class Config:
     CLIP_DURATION_SECONDS = 60
     CLIP_COOLDOWN_SECONDS = 60
     
+    
     # GenAI
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    
+    # Dev
+    NO_LOGS = os.getenv("NO_LOGS", "false").lower() == "true"
 
 class IntentConfig:
     # Normalization Max Values (Approximate upper bounds)
     NORM_MAX = {
         "velocity": 2.0,       # m/s or relative units
-        "motion_E": 1.0,       # Accumulated motion energy per frame
+        "motion_E": 2.0,       # Increased range to handle fast movers
         "head_yaw_rate": 0.5,  # rad/s ? Adjust based on observation
         "head_osc": 5,         # count per window
         "hand_fidget": 0.2,    # high pass energy
@@ -76,7 +73,8 @@ class IntentConfig:
         "dir_flip": 5,         # count per window
         "stop_go": 5,          # count per window
         "presence_s": 60,      # seconds (maybe less relevant for immediate intent?)
-        "movinet_pressure": 1.0 # Normalized pressure derived from probability
+        "movinet_pressure": 1.0, # Normalized pressure derived from probability
+        "loitering_score": 1.0 # 0-1 score
     }
     
     INTENT_HARDBOOST_VALUE = 0.8
@@ -86,14 +84,15 @@ class IntentConfig:
     WEIGHTS = {
         "velocity": 0.1,
         "motion_E": 0.1,
-        "head_yaw_rate": 0.15,
+        "head_yaw_rate": 0.1,
         "head_osc": 0.1,
-        "hand_fidget": 0.15,
-        "osc_energy": 0.15,
+        "hand_fidget": 0.1,
+        "osc_energy": 0.1,
         "head_down": 0.1,
         "dir_flip": 0.1,
-        "stop_go": 0.1,
-        "movinet_pressure": 0.15
+        "stop_go": 0.05,
+        "movinet_pressure": 0.2, # Increased from 0.15
+        "loitering_score": 0.25 # High importance for loitering
     }
 
     # Intent Smoothing
