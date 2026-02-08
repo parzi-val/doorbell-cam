@@ -7,6 +7,9 @@ from backend.config.config import Config
 
 class PoseDetector:
     def __init__(self):
+        self._init_detector()
+
+    def _init_detector(self):
         base_options = python.BaseOptions(model_asset_path=Config.MODEL_PATH)
         options = vision.PoseLandmarkerOptions(
             base_options=base_options,
@@ -14,6 +17,11 @@ class PoseDetector:
             num_poses=1
         )
         self.landmarker = vision.PoseLandmarker.create_from_options(options)
+
+    def reset(self):
+        if hasattr(self, 'landmarker'):
+            self.landmarker.close()
+        self._init_detector()
 
     def detect(self, image, timestamp_ms):
         """

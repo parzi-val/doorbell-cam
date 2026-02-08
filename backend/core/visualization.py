@@ -4,21 +4,27 @@ import matplotlib.pyplot as plt
 from backend.config.config import Config
 
 class Visualizer:
-    def __init__(self):
+    def __init__(self, headless=False):
         self.config = Config
+        self.headless = headless
         
         # Matplotlib setup
-        plt.ion()
-        # DEBUG: Only plotting MoViNet classes as requested
-        self.fig, self.ax = plt.subplots(1, 1, figsize=(7, 4))
-        self.lines = {
-            "movinet_p0": self.ax.plot([], [], label="Class 0 (Fight?)", color='r')[0],
-            "movinet_p1": self.ax.plot([], [], label="Class 1 (NoFight?)", color='b')[0],
-        }
-        
-        self.ax.legend()
-        self.ax.set_xlim(0, self.config.WINDOW)
-        self.ax.set_ylim(0, 1.0)
+        if not self.headless:
+            plt.ion()
+            # DEBUG: Only plotting MoViNet classes as requested
+            self.fig, self.ax = plt.subplots(1, 1, figsize=(7, 4))
+            self.lines = {
+                "movinet_p0": self.ax.plot([], [], label="Class 0 (Fight?)", color='r')[0],
+                "movinet_p1": self.ax.plot([], [], label="Class 1 (NoFight?)", color='b')[0],
+            }
+            
+            self.ax.legend()
+            self.ax.set_xlim(0, self.config.WINDOW)
+            self.ax.set_ylim(0, 1.0)
+        else:
+            self.fig = None
+            self.ax = None
+            self.lines = {}
 
     def draw_overlay(self, frame, signals, intent_score=0.0, threat_level="CALM", weapon_detections=None, is_recording=False):
         """
@@ -105,6 +111,9 @@ class Visualizer:
         Update live plots.
         :param buffers: dict containing lists for plots
         """
+        if self.headless:
+            return
+
         plot_data = {
             "movinet_p0": buffers.get("movinet_p0", []),
             "movinet_p1": buffers.get("movinet_p1", []),

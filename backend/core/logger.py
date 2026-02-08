@@ -14,9 +14,10 @@ class EventLogger:
     STATE_RECORDING = "RECORDING"
     STATE_COOLDOWN = "COOLDOWN"
 
-    def __init__(self):
+    def __init__(self, no_logs=False):
         self.config = Config
         self.summarizer = ClipSummarizer()
+        self.no_logs = no_logs
         
         # State
         self.state = self.STATE_IDLE
@@ -43,7 +44,7 @@ class EventLogger:
         os.makedirs(self.clips_dir, exist_ok=True)
         os.makedirs(self.meta_dir, exist_ok=True)
         
-        print(f"EventLogger initialized. Fixed clip duration: {self.config.CLIP_DURATION_SECONDS}s")
+        print(f"EventLogger initialized. Fixed clip duration: {self.config.CLIP_DURATION_SECONDS}s. No Logs: {self.no_logs}")
 
     @property
     def is_recording(self):
@@ -74,6 +75,9 @@ class EventLogger:
         now = time.time()
         
         # Trigger Conditions
+        if self.no_logs:
+            return
+
         # Hard threshold >= 0.6 OR Weapon
         is_event = (intent_score >= 0.6) or weapon_present
         
@@ -205,23 +209,25 @@ class EventLogger:
         ts_str = datetime.fromtimestamp(metadata["timestamp"]).strftime("%Y%m%d_%H%M%S")
         filename_base = f"event_{ts_str}_{metadata['final_level']}" 
         
-        vid_path = os.path.join(self.clips_dir, f"{filename_base}.mp4")
+        # Switch to WebM (VP8) for better browser compatibility without external DLLs
+        vid_path = os.path.join(self.clips_dir, f"{filename_base}.webm")
         json_path = os.path.join(self.meta_dir, f"{filename_base}.json")
         
         # Write Video
         h, w, _ = frames[0].shape
-        # mp4v is not supported in browsers. Use avc1 (H.264).
+        
         try:
-            fourcc = cv2.VideoWriter_fourcc(*'avc1')
+            # VP8 is widely supported in Chrome/Edge and OpenCV
+            fourcc = cv2.VideoWriter_fourcc(*'vp80')
             out = cv2.VideoWriter(vid_path, fourcc, actual_fps, (w, h))
             if not out.isOpened():
-                raise Exception("avc1 failed")
+                raise Exception("vp80 failed")
         except:
-             # Fallback to mp4v if avc1 fails (though it won't play in browser)
-             print("[LOGGER] Warning: avc1 codec failed, falling back to mp4v")
+             print("[LOGGER] Warning: vp80 failed, trying mp4v (might not play in browser)")
+             vid_path = os.path.join(self.clips_dir, f"{filename_base}.mp4")
              fourcc = cv2.VideoWriter_fourcc(*'mp4v')
              out = cv2.VideoWriter(vid_path, fourcc, actual_fps, (w, h))
-        
+
         for f in frames:
             out.write(f)
         out.release()

@@ -10,3 +10,6 @@ class EMASmoother:
         else:
             self.value = self.alpha * new_value + (1 - self.alpha) * self.value
         return self.value
+
+    def reset(self):
+        self.value = None

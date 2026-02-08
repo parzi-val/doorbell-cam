@@ -10,6 +10,11 @@ class IntentEngine:
         self.current_score = 0.0
         self.current_level = "CALM"
 
+    def reset(self):
+        self.current_score = 0.0
+        self.current_level = "CALM"
+        self.intent_smoother.reset()
+
     def normalize(self, signals):
         """
         Normalize signals to [0, 1] range based on configured max values.
@@ -79,8 +84,8 @@ class IntentEngine:
         gated_presence_weight = BASE_PRESENCE_WEIGHT * (1 + other_score * self.config.PRESENCE_GATING_FACTOR)
         
         # MoViNet Gating Logic
-        # It acts as a pressure signal, only effective if there is already some "base" intent/threat.
-        # We don't want it to trigger alerts purely on visual noise if the person is standing still (pose signals low).
+        # It acts as a pressure signal.
+        # We relaxed the gating to allow it to trigger even if pose signals are subtle.
         
         movinet_pressure = norm.get("movinet_pressure", 0.0)
         movinet_weight = self.config.WEIGHTS.get("movinet_pressure", 0.15)
@@ -88,10 +93,17 @@ class IntentEngine:
         # Calculate initial raw score
         raw_score = other_score + (presence_val * gated_presence_weight)
         
-        # Only add movinet if base score (other + presence) is above a small threshold
-        # Let's use 'other_score' (motion/behavior) as the primary trigger for movinet.
-        if other_score > 0.3: # Only if significant threat exists from other signals
-            raw_score += movinet_pressure * movinet_weight
+        # Always add MoViNet contribution
+        raw_score += movinet_pressure * movinet_weight
+        
+        # PRESSURE OVERRIDE
+        # If MoViNet is very confident (pressure > 0.4), force at least UNUSUAL/SUSPICIOUS
+        if movinet_pressure > 0.4:
+             raw_score = max(raw_score, 0.45) # Ensure at least UNUSUAL
+        if movinet_pressure > 0.75:
+             raw_score = max(raw_score, 0.65) # Ensure at least SUSPICIOUS/THREAT
+        
+        # HARDBOOST: Weapon Detection
         
         # HARDBOOST: Weapon Detection
         if signals.get("weapon_confirmed", False):
