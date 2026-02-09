@@ -53,7 +53,10 @@ const Live = () => {
                 // It's JSON metadata
                 try {
                     const data = JSON.parse(event.data);
-                    setMetadata(data);
+                    // Only update if it's a full frame metadata packet
+                    if (data.signals) {
+                        setMetadata(data);
+                    }
                 } catch (e) {
                     console.error("Error parsing metadata", e);
                 }
@@ -161,7 +164,7 @@ const Live = () => {
                                             val > 0.5 && "text-primary",
                                             val > 0.8 && "text-accent-orange"
                                         )}>
-                                            {val.toFixed(3)}
+                                            {key === 'doorbell_rings' ? Math.ceil(val) : val.toFixed(3)}
                                         </span>
                                     </div>
                                 ))}

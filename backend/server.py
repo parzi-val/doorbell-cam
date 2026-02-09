@@ -27,7 +27,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -43,13 +43,22 @@ DASHBOARD_DIR = os.path.join(BASE_DIR, "frontend")
 class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
+        self.sensor_connections: List[WebSocket] = []
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
         self.active_connections.append(websocket)
 
+    async def connect_sensor(self, websocket: WebSocket):
+        await websocket.accept()
+        self.sensor_connections.append(websocket)
+        print("Sensor connected!")
+
     def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+        if websocket in self.sensor_connections:
+            self.sensor_connections.remove(websocket)
 
     async def broadcast_bytes(self, data: bytes):
         for connection in self.active_connections:
@@ -59,6 +68,7 @@ class ConnectionManager:
                 pass
 
     async def broadcast_json(self, data: dict):
+        # Only send high-bandwidth data to frontend clients
         for connection in self.active_connections:
             try:
                 await connection.send_json(data)
@@ -159,16 +169,38 @@ async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     try:
         while True:
-            # Keep alive / maybe receive control commands later
+            # Keep alive / receive frontend commands
             data = await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
     except Exception as e:
-        print(f"WS Error: {e}")
-        try:
-            manager.disconnect(websocket)
-        except:
-            pass
+        pass
+
+@app.websocket("/ws/sensor")
+async def sensor_websocket_endpoint(websocket: WebSocket):
+    global pipeline
+    await manager.connect_sensor(websocket)
+    try:
+        while True:
+            # Handle sensor data from ESP
+            data = await websocket.receive_text()
+            try:
+                msg = json.loads(data)
+                
+                # Hardware Action: Doorbell Press
+                if msg.get("type") == "sensor_reading" and msg.get("sensor") == "doorbell_btn" and msg.get("state") == "pressed":
+                    if pipeline:
+                         pipeline.trigger_doorbell()
+
+                # Broadcast relevant sensor events to Frontends
+                if msg.get("type") in ["sensor_reading", "heartbeat"]:
+                    await manager.broadcast_json(msg)
+            except:
+                pass
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+    except Exception:
+        pass
 
 
 @app.get("/api/events")

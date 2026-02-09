@@ -41,6 +41,11 @@ class Pipeline:
         self.violence_worker.reset()
         self.weapon_worker.reset()
 
+    def trigger_doorbell(self):
+        """Pass hardware trigger to processor."""
+        if hasattr(self, 'processor'):
+            self.processor.trigger_doorbell()
+
     def run(self, input_source=0, headless=False, frame_callback=None, throttle=True):
         print(f"Starting pipeline on source: {input_source}")
 

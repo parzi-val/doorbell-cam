@@ -36,7 +36,16 @@ const Home = () => {
     const ws = useRef(null);
     const lastAlertTime = useRef(0);
 
+    // Hardware State
+    const [hwStatus, setHwStatus] = useState({
+        online: false,
+        lastHeartbeat: 0,
+        pir: false,
+        btn: false
+    });
+
     useEffect(() => {
+        // Fetch Events...
         // Fetch Events for Metrics & Recent List
         fetch('http://localhost:8000/api/events')
             .then(res => res.json())
@@ -83,6 +92,22 @@ const Home = () => {
                             );
                             lastAlertTime.current = now;
                         }
+                    }
+                }
+
+                // Hardware Events
+                if (data.type === 'heartbeat') {
+                    setHwStatus(prev => ({ ...prev, online: true, lastHeartbeat: Date.now() }));
+                }
+
+                if (data.type === 'sensor_reading') {
+                    if (data.sensor === 'pir') {
+                        setHwStatus(prev => ({ ...prev, pir: data.state === 'active' }));
+                    }
+                    if (data.sensor === 'doorbell_btn' && data.state === 'pressed') {
+                        setHwStatus(prev => ({ ...prev, btn: true }));
+                        toast.success("🔔 Doorbell Rang!", { duration: 3000 });
+                        setTimeout(() => setHwStatus(prev => ({ ...prev, btn: false })), 2000);
                     }
                 }
             } catch (e) {
@@ -140,6 +165,17 @@ const Home = () => {
                     )}>
                         {isOnline ? <Wifi size={18} /> : <WifiOff size={18} />}
                         <span>{isOnline ? "Cloud Connected" : "Offline"}</span>
+                    </div>
+
+                    {/* Hardware Status */}
+                    <div className={clsx(
+                        "flex items-center gap-2 px-4 py-2 rounded-lg font-medium border transition-colors",
+                        hwStatus.online
+                            ? "bg-purple-50 text-purple-700 border-purple-200"
+                            : "bg-slate-100 text-slate-400 border-slate-200"
+                    )}>
+                        <Activity size={18} className={clsx(hwStatus.online && "animate-pulse")} />
+                        <span>{hwStatus.online ? "ESP8266 Online" : "No Sensors"}</span>
                     </div>
                 </div>
             </div>

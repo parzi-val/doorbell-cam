@@ -44,9 +44,9 @@ class Config:
     # Weapon Detection Settings
     WEAPON_MODEL_PATH = "models/weapons/best.onnx"
     WEAPON_IMG_SIZE = 640
-    WEAPON_CONF_THRESH = 0.6
+    WEAPON_CONF_THRESH = 0.8
     WEAPON_IOU_THRESH = 0.45
-    WEAPON_DEBOUNCE_FRAMES = 3
+    WEAPON_DEBOUNCE_FRAMES = 10
     WEAPON_COOLDOWN_S = 20.0
     WEAPON_CLASS_NAMES = ['Gun', 'Explosive', 'Grenade', 'Knife']
 
@@ -77,7 +77,8 @@ class IntentConfig:
         "stop_go": 5,          # count per window
         "presence_s": 60,      # seconds (maybe less relevant for immediate intent?)
         "movinet_pressure": 1.0, # Normalized pressure derived from probability
-        "loitering_score": 1.0 # 0-1 score
+        "loitering_score": 1.0, # 0-1 score
+        "doorbell_rings": 3.0  # Max 3 rings considered for normalization
     }
     
     INTENT_HARDBOOST_VALUE = 0.8
@@ -95,7 +96,8 @@ class IntentConfig:
         "dir_flip": 0.1,
         "stop_go": 0.05,
         "movinet_pressure": 0.2, # Increased from 0.15
-        "loitering_score": 0.25 # High importance for loitering
+        "loitering_score": 0.20, # High importance for loitering
+        "doorbell_rings": 0.40    # High impact (Hardware Trigger)
     }
 
     # Intent Smoothing

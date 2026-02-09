@@ -38,8 +38,24 @@ class SignalProcessor:
         self.movinet_p0_buf = deque(maxlen=Config.WINDOW)
         self.movinet_p1_buf = deque(maxlen=Config.WINDOW)
         
+        # Weapon State
         self.weapon_debounce_buf = deque(maxlen=Config.WEAPON_DEBOUNCE_FRAMES)
         self.weapon_cooldown_expiry = 0.0
+        
+        # Doorbell State
+        self.doorbell_rings = 0
+        self.last_ring_time = 0.0
+        self.doorbell_decay_rate = 0.5 # Rings lost per second
+
+    def trigger_doorbell(self):
+        """Called when hardware button is pressed."""
+        import time
+        now = time.time()
+        # Debounce slightly at software level too (200ms)
+        if now - self.last_ring_time > 0.2:
+            self.doorbell_rings += 1.0
+            self.last_ring_time = now
+            print(f"[SIGNALS] Doorbell Ring! Count: {self.doorbell_rings}")
 
     def reset(self):
         """Reset all state and buffers."""
@@ -356,10 +372,15 @@ class SignalProcessor:
         if current_time < self.weapon_cooldown_expiry:
              weapon_confirmed = True
              
+        # Doorbell Decay (assuming Config.DT is the dt for decay)
+        if Config.DT > 0:
+            self.doorbell_rings = max(0.0, self.doorbell_rings - (self.doorbell_decay_rate * Config.DT))
+        
         weapon_cooldown = max(0.0, self.weapon_cooldown_expiry - current_time)
         
         return {
             "presence_s": presence_duration,
+            "doorbell_rings": self.doorbell_rings,
             "net_disp": net_displacement,
             "motion_E": local_motion_energy,
             "velocity": centroid_velocity,
