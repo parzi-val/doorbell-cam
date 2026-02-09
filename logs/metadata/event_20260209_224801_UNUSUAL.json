@@ -1,0 +1,84 @@
+{
+    "clip_id": "a32171a3-0f8b-4f40-8250-a75f49297a27",
+    "timestamp": 1770657481.8157783,
+    "duration": 10.033333333333333,
+    "trigger_level": "UNUSUAL",
+    "final_level": "UNUSUAL",
+    "max_intent": 0.4118786434677596,
+    "weapon_detected": false,
+    "summary": "The event was triggered by the unusual presence of a man carrying a rifle on his shoulder. He approached the doorbell, briefly looking at the camera before turning his attention to a black Nissan 300Z parked nearby. He did not exhibit any aggressive behavior towards the house or attempt to gain entry. While the visible weapon is concerning, his primary focus appeared to be the vehicle. Therefore, this incident seems to be an unusual situation involving a person with a weapon near the property, rather than a direct threat or attempted home invasion.",
+    "signals_stats": {
+        "presence_s": {
+            "mean": 4.999995231628418,
+            "max": 9.999990463256836
+        },
+        "net_disp": {
+            "mean": 0.13875164594225683,
+            "max": 0.36633252252983384
+        },
+        "motion_E": {
+            "mean": 0.26769009727345755,
+            "max": 0.8319854118268456
+        },
+        "velocity": {
+            "mean": 0.27272699090487196,
+            "max": 0.8319854118268457
+        },
+        "head_yaw_rate": {
+            "mean": 0.0031083836959404708,
+            "max": 0.007629426567181311
+        },
+        "head_osc": {
+            "mean": 0.10963455149501661,
+            "max": 2.0
+        },
+        "head_down": {
+            "mean": 0.03986710963455149,
+            "max": 0.3
+        },
+        "dir_flip": {
+            "mean": 1.3355481727574752,
+            "max": 4.0
+        },
+        "osc_energy": {
+            "mean": 0.7660967543938114,
+            "max": 1.5714285714285714
+        },
+        "stop_go": {
+            "mean": 1.5116279069767442,
+            "max": 4.0
+        },
+        "hand_fidget": {
+            "mean": 0.02472465217647683,
+            "max": 0.07306483976228142
+        },
+        "movinet_pressure": {
+            "mean": 0.1654584791764815,
+            "max": 0.3271812703994125
+        },
+        "loitering_score": {
+            "mean": 0.1880177187153929,
+            "max": 1.0
+        },
+        "loitering_time": {
+            "mean": 3.6683277962347725,
+            "max": 9.33333333333332
+        },
+        "loitering_radius": {
+            "mean": 0.12978677157365165,
+            "max": 0.303970766115942
+        },
+        "weapon_confirmed": {
+            "mean": 0.0,
+            "max": false
+        },
+        "weapon_cooldown": {
+            "mean": 0.0,
+            "max": 0.0
+        },
+        "weapon_score": {
+            "mean": 0.0,
+            "max": 0.0
+        }
+    }
+}

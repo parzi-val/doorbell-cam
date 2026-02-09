@@ -2,12 +2,39 @@ import { X, Check, ThumbsUp, ThumbsDown, Shield } from 'lucide-react';
 import { format } from 'date-fns';
 import clsx from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 const VideoModal = ({ event, onClose }) => {
     if (!event) return null;
 
     const date = new Date(event.timestamp * 1000);
     const videoSrc = `http://localhost:8000${event.video_url}`;
+
+    const handleFeedback = async (type) => {
+        try {
+            const res = await fetch('http://localhost:8000/api/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    event_id: event.clip_id,
+                    feedback_type: type
+                })
+            });
+            const data = await res.json();
+
+            // Show toast with conclusion
+            toast.success(
+                <div>
+                    <b>Learning Report Generated</b>
+                    <div className="text-xs mt-1 opacity-90">{data.conclusion}</div>
+                </div>,
+                { duration: 4000 }
+            );
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to record feedback");
+        }
+    };
 
     return (
         <AnimatePresence>
@@ -78,7 +105,7 @@ const VideoModal = ({ event, onClose }) => {
                             </div>
                             <div className="bg-slate-100 p-3 rounded-lg border border-border">
                                 <span className="text-xs text-secondary block mb-1">Duration</span>
-                                <span className="text-lg font-mono font-bold text-primary">{event.duration}s</span>
+                                <span className="text-lg font-mono font-bold text-primary">{event.duration?.toFixed(1)}s</span>
                             </div>
                             <div className="bg-slate-100 p-3 rounded-lg border border-border">
                                 <span className="text-xs text-secondary block mb-1">Weapon Conf</span>
@@ -90,10 +117,16 @@ const VideoModal = ({ event, onClose }) => {
 
                         {/* Actions */}
                         <div className="mt-auto grid grid-cols-2 gap-3">
-                            <button className="col-span-1 py-3 bg-accent-green/10 text-accent-green hover:bg-accent-green/20 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2">
+                            <button
+                                onClick={() => handleFeedback('accurate')}
+                                className="col-span-1 py-3 bg-accent-green/10 text-accent-green hover:bg-accent-green/20 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+                            >
                                 <ThumbsUp size={16} /> Accurate
                             </button>
-                            <button className="col-span-1 py-3 bg-accent-red/10 text-accent-red hover:bg-accent-red/20 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2">
+                            <button
+                                onClick={() => handleFeedback('inaccurate')}
+                                className="col-span-1 py-3 bg-accent-red/10 text-accent-red hover:bg-accent-red/20 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+                            >
                                 <ThumbsDown size={16} /> Inaccurate
                             </button>
                             <button className="col-span-2 py-3 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2">

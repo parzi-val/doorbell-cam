@@ -1,0 +1,84 @@
+{
+    "clip_id": "e5b5af3a-820d-4898-b3bc-7ec6012ea693",
+    "timestamp": 1770656185.144635,
+    "duration": 32.03333333333333,
+    "trigger_level": "SUSPICIOUS",
+    "final_level": "SUSPICIOUS",
+    "max_intent": 0.6499999999999986,
+    "weapon_detected": false,
+    "summary": "The Ring camera triggered due to the presence of a uniformed officer approaching the front door. The officer calmly rang the doorbell, scanned the surroundings, and waited. There was no aggression displayed, and they were not holding any objects in a threatening manner, although standard police gear was visible on their person. According to the video's description and overlaid text, this was a false alarm\u2014a welfare check initiated by a third party who falsely reported the resident was suicidal with a rifle as part of a scheme to claim a life insurance policy. The officers were simply responding to a false report, and their behavior was not indicative of a genuine threat.",
+    "signals_stats": {
+        "weapon_score": {
+            "mean": 0.0,
+            "max": 0.0
+        },
+        "presence_s": {
+            "mean": 16.04998469352722,
+            "max": 31.999969482421875
+        },
+        "net_disp": {
+            "mean": 0.3003300542998292,
+            "max": 0.6447158856490154
+        },
+        "motion_E": {
+            "mean": 0.14193876392581814,
+            "max": 0.7350321158014121
+        },
+        "velocity": {
+            "mean": 0.1440352584106301,
+            "max": 0.7350321158014121
+        },
+        "head_yaw_rate": {
+            "mean": 0.0013487864072417974,
+            "max": 0.01570101031235286
+        },
+        "head_osc": {
+            "mean": 0.0,
+            "max": 0.0
+        },
+        "head_down": {
+            "mean": 0.0236040708808067,
+            "max": 0.7058823529411765
+        },
+        "dir_flip": {
+            "mean": 0.18684759916492694,
+            "max": 4.0
+        },
+        "osc_energy": {
+            "mean": 0.37041227448434955,
+            "max": 2.0
+        },
+        "stop_go": {
+            "mean": 0.5448851774530271,
+            "max": 6.0
+        },
+        "hand_fidget": {
+            "mean": 0.008963687208326963,
+            "max": 0.0702822544797044
+        },
+        "movinet_pressure": {
+            "mean": 0.6852545439953414,
+            "max": 1.0623198517369583
+        },
+        "loitering_score": {
+            "mean": 0.5457132915796796,
+            "max": 1.0
+        },
+        "loitering_time": {
+            "mean": 8.465518441196929,
+            "max": 23.133333333333333
+        },
+        "loitering_radius": {
+            "mean": 0.15077855778281277,
+            "max": 0.3106755342399985
+        },
+        "weapon_confirmed": {
+            "mean": 0.0,
+            "max": false
+        },
+        "weapon_cooldown": {
+            "mean": 0.0,
+            "max": 0.0
+        }
+    }
+}

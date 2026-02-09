@@ -3,13 +3,13 @@ import MainLayout from './layouts/MainLayout';
 import Live from './pages/Live';
 import Events from './pages/Events';
 import Test from './pages/Test';
-
-// Placeholders
-const Home = () => <div className="text-2xl font-bold">Dashboard Home (Coming Soon)</div>;
+import Home from './pages/Home';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
     return (
         <BrowserRouter>
+            <Toaster position="top-center" />
             <Routes>
                 <Route path="/" element={<MainLayout />}>
                     <Route index element={<Home />} />

@@ -189,18 +189,43 @@ def get_events():
                 # Add filename for reference
                 filename = os.path.basename(f)
                 
-                # Check for video (WebM preferred, then MP4)
-                webm_name = filename.replace(".json", ".webm")
-                mp4_name = filename.replace(".json", ".mp4")
+                video_url = None
                 
-                if os.path.exists(os.path.join(CLIPS_DIR, webm_name)):
-                     data["video_url"] = f"/videos/{webm_name}"
+                # Method 1: Check by clip_id (UUID)
+                if "clip_id" in data:
+                    cid = data["clip_id"]
+                    if os.path.exists(os.path.join(CLIPS_DIR, f"{cid}.mp4")):
+                        video_url = f"/videos/{cid}.mp4"
+                    elif os.path.exists(os.path.join(CLIPS_DIR, f"{cid}.webm")):
+                        video_url = f"/videos/{cid}.webm"
+                        
+                # Method 2: Check by filename (Legacy/Fallback)
+                if not video_url:
+                    webm_name = filename.replace(".json", ".webm")
+                    mp4_name = filename.replace(".json", ".mp4")
+                    
+                    if os.path.exists(os.path.join(CLIPS_DIR, webm_name)):
+                         video_url = f"/videos/{webm_name}"
+                    elif os.path.exists(os.path.join(CLIPS_DIR, mp4_name)):
+                         video_url = f"/videos/{mp4_name}"
+                
+                if video_url:
+                     data["video_url"] = video_url
+                     # Check for thumbnail
+                     if "clip_id" in data:
+                         thumb_path = os.path.join(CLIPS_DIR, f"{data['clip_id']}.jpg")
+                         if os.path.exists(thumb_path):
+                             data["thumbnail_url"] = f"/videos/{data['clip_id']}.jpg"
+                     
                      data["meta_filename"] = filename
                      events.append(data)
-                elif os.path.exists(os.path.join(CLIPS_DIR, mp4_name)):
-                     data["video_url"] = f"/videos/{mp4_name}"
-                     data["meta_filename"] = filename
-                     events.append(data)
+                elif "clip_id" in data: 
+                    # Even if video missing, return event if we have data? 
+                    # Frontend might break if no video_url. Let's skip for consistency with valid events only.
+                    # Or provide null?
+                    # The original logic skipped. Stick to skipping or maybe log warning.
+                    pass
+
         except Exception as e:
             print(f"Error loading {f}: {e}")
             
@@ -212,7 +237,7 @@ app.mount("/videos", StaticFiles(directory=CLIPS_DIR), name="videos")
 
 # --- Test / Replay Endpoints ---
 TEST_CLIPS_DIR = os.path.join(BASE_DIR, "test-videos", "output")
-TEST_DATA_DIR = os.path.join(BASE_DIR, "test-videos", "data")
+TEST_DATA_DIR = os.path.join(BASE_DIR, "test-videos", "data02")
 
 class TestStartRequest(BaseModel):
     filename: str
@@ -264,10 +289,9 @@ def run_replay(filename):
             
             ret, frame = cap.read()
             if not ret:
-                print("[REPLAY] Video ended. Looping...")
-                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                frame_idx = 0
-                continue
+                print("[REPLAY] Video ended. Stopping.")
+                replay_running = False
+                break
             
             if frame_idx % 100 == 0:
                  print(f"[REPLAY] Frame {frame_idx}/{total_frames}")
@@ -376,6 +400,17 @@ def start_live_feed():
         return {"status": "started", "source": "webcam"}
     else:
         return {"status": "already_running", "source": "webcam"}
+
+class FeedbackRequest(BaseModel):
+    event_id: str
+    feedback_type: str # "accurate" or "inaccurate"
+
+@app.post("/api/feedback")
+def submit_feedback(request: FeedbackRequest):
+    from backend.core.learning import LearningSystem
+    ls = LearningSystem()
+    report = ls.process_feedback(request.event_id, request.feedback_type)
+    return report
 
 if __name__ == "__main__":
     import uvicorn

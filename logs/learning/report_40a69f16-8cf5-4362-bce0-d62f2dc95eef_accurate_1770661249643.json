@@ -1,0 +1,31 @@
+{
+    "report_id": "report_40a69f16-8cf5-4362-bce0-d62f2dc95eef_accurate_1770661249643",
+    "event_id": "40a69f16-8cf5-4362-bce0-d62f2dc95eef",
+    "timestamp": 1770661249.6437242,
+    "feedback": "accurate",
+    "model_state": {
+        "prediction": 0.5504068042831293,
+        "target": 1.0,
+        "error": 0.44959319571687073
+    },
+    "weight_updates": {
+        "velocity": 0.0061979641493738104,
+        "motion_E": 0.006197964149373811,
+        "head_yaw_rate": 0.0002517331710928666,
+        "head_osc": 0.0,
+        "hand_fidget": 0.00542751457767603,
+        "osc_energy": 0.02247965978584354,
+        "head_down": 0.0,
+        "dir_flip": 0.01798372782867483,
+        "stop_go": 0.01798372782867483,
+        "movinet_pressure": 0.0,
+        "loitering_score": 0.02247965978584354
+    },
+    "credit_assignment": [
+        "osc_energy was high (1.00) but weight (0.1) might be too low.",
+        "dir_flip was high (0.80) but weight (0.1) might be too low.",
+        "stop_go was high (0.80) but weight (0.05) might be too low.",
+        "loitering_score was high (1.00) but weight (0.25) might be too low."
+    ],
+    "conclusion": "Model under-confident. Consider increasing weights for observed active signals."
+}

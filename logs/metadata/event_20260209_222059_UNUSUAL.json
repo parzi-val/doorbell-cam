@@ -1,0 +1,84 @@
+{
+    "clip_id": "40a69f16-8cf5-4362-bce0-d62f2dc95eef",
+    "timestamp": 1770655859.3902607,
+    "duration": 10.033333333333333,
+    "trigger_level": "UNUSUAL",
+    "final_level": "UNUSUAL",
+    "max_intent": 0.46752755876930063,
+    "weapon_detected": false,
+    "summary": "Two individuals approached the front door, triggering the camera when one in a grey hoodie engaged in a verbally aggressive confrontation with the resident. The man in the hoodie made explicit threats, stating he would \"start fucking shit up\" and demanding the resident \"respect the game,\" while gesturing assertively. A second individual, wearing a mask or balaclava, was present and sat on the porch railing, contributing to the intimidating atmosphere. No objects or weapons were visibly held by either person, but the clear verbal threats and the combined presence of the two individuals suggest a genuine threat intended to intimidate the resident.",
+    "signals_stats": {
+        "presence_s": {
+            "mean": 4.999995231628418,
+            "max": 9.999990463256836
+        },
+        "net_disp": {
+            "mean": 0.1385395044905037,
+            "max": 0.24573267887323155
+        },
+        "motion_E": {
+            "mean": 0.2211687188713388,
+            "max": 0.5514286433531304
+        },
+        "velocity": {
+            "mean": 0.2349590216443865,
+            "max": 0.5514286433531302
+        },
+        "head_yaw_rate": {
+            "mean": 0.0026298512635036615,
+            "max": 0.005599132137475551
+        },
+        "head_osc": {
+            "mean": 0.0,
+            "max": 0.0
+        },
+        "head_down": {
+            "mean": 0.0,
+            "max": 0.0
+        },
+        "dir_flip": {
+            "mean": 0.8106312292358804,
+            "max": 4.0
+        },
+        "osc_energy": {
+            "mean": 0.8272743936495692,
+            "max": 2.0
+        },
+        "stop_go": {
+            "mean": 1.4717607973421927,
+            "max": 4.0
+        },
+        "hand_fidget": {
+            "mean": 0.015511947397510337,
+            "max": 0.04828822704064215
+        },
+        "movinet_pressure": {
+            "mean": 0.0,
+            "max": 0.0
+        },
+        "loitering_score": {
+            "mean": 0.6561461794019932,
+            "max": 1.0
+        },
+        "loitering_time": {
+            "mean": 9.464230343300093,
+            "max": 19.03333333333329
+        },
+        "loitering_radius": {
+            "mean": 0.1385395044905037,
+            "max": 0.24573267887323155
+        },
+        "weapon_confirmed": {
+            "mean": 0.0,
+            "max": false
+        },
+        "weapon_cooldown": {
+            "mean": 0.0,
+            "max": 0.0
+        },
+        "weapon_score": {
+            "mean": 0.0,
+            "max": 0.0
+        }
+    }
+}

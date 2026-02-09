@@ -1,0 +1,84 @@
+{
+    "clip_id": "4c6a0014-5e24-4eea-a963-43958517595c",
+    "timestamp": 1770656504.0500488,
+    "duration": 9.033333333333333,
+    "trigger_level": "SUSPICIOUS",
+    "final_level": "SUSPICIOUS",
+    "max_intent": 0.6580715493832558,
+    "weapon_detected": false,
+    "summary": "A person, disguised with a hoodie and mask, caused the \"suspicious\" trigger by approaching the property and aggressively striking a white fixture on the fence multiple times with a dark object, causing sparks and debris. This behavior, including the forceful actions and quick departure, indicates an intent to damage or tamper with the property. The individual did not show direct aggression towards another person but was holding an object and using it aggressively to commit property damage. This is a genuine threat of vandalism or property damage, not a false alarm.",
+    "signals_stats": {
+        "presence_s": {
+            "mean": 4.499995708465576,
+            "max": 8.999991416931152
+        },
+        "net_disp": {
+            "mean": 0.4152527129706239,
+            "max": 0.6116073769700474
+        },
+        "motion_E": {
+            "mean": 0.2862069365505586,
+            "max": 0.46841102767240234
+        },
+        "velocity": {
+            "mean": 0.3058356824782524,
+            "max": 0.5296623979879264
+        },
+        "head_yaw_rate": {
+            "mean": 0.003760876718307016,
+            "max": 0.009243985947112421
+        },
+        "head_osc": {
+            "mean": 0.0,
+            "max": 0.0
+        },
+        "head_down": {
+            "mean": 0.1427829147327278,
+            "max": 1.0
+        },
+        "dir_flip": {
+            "mean": 2.4612546125461257,
+            "max": 6.0
+        },
+        "osc_energy": {
+            "mean": 0.7532685376252696,
+            "max": 1.2142857142857142
+        },
+        "stop_go": {
+            "mean": 3.0516605166051662,
+            "max": 7.0
+        },
+        "hand_fidget": {
+            "mean": 0.03856836469700113,
+            "max": 0.10800397631338225
+        },
+        "movinet_pressure": {
+            "mean": 0.7695102497408122,
+            "max": 1.208606903702169
+        },
+        "loitering_score": {
+            "mean": 0.08755227552275514,
+            "max": 0.6866666666666651
+        },
+        "loitering_time": {
+            "mean": 2.651291512915129,
+            "max": 7.433333333333326
+        },
+        "loitering_radius": {
+            "mean": 0.13454475195417184,
+            "max": 0.3205279189645275
+        },
+        "weapon_confirmed": {
+            "mean": 0.0,
+            "max": false
+        },
+        "weapon_cooldown": {
+            "mean": 0.0,
+            "max": 0.0
+        },
+        "weapon_score": {
+            "mean": 0.0,
+            "max": 0.0
+        }
+    }
+}

@@ -22,7 +22,7 @@ wheels/
 .installed.cfg
 .ipynb_checkpoints/
 *.egg
-logs/
+logs/clips/
 # Virtual Environment
 .venv/
 venv/

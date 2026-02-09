@@ -1,0 +1,84 @@
+{
+    "clip_id": "d72aaef5-9c09-4eac-928c-c7cfb6ef0b6a",
+    "timestamp": 1770656845.0657482,
+    "duration": 54.03333333333333,
+    "trigger_level": "THREAT",
+    "final_level": "THREAT",
+    "max_intent": 0.8019740123376546,
+    "weapon_detected": true,
+    "summary": "The trigger event was caused by a person exhibiting highly aggressive behavior, verbally threatening to \"bust these sh*ts out\" while brandishing an upside-down stool as a weapon. Her intent was clearly aggressive, stating she would teach someone a lesson. She demonstrated this aggression by physically striking a parked car multiple times with the stool, causing apparent damage, making this a genuine threat and an act of vandalism.",
+    "signals_stats": {
+        "presence_s": {
+            "mean": 26.999974250793457,
+            "max": 53.999948501586914
+        },
+        "net_disp": {
+            "mean": 0.3974329420802752,
+            "max": 0.6614598584978029
+        },
+        "motion_E": {
+            "mean": 0.24551418267176597,
+            "max": 0.9575560355683278
+        },
+        "velocity": {
+            "mean": 0.24783770960717008,
+            "max": 0.9575560355683277
+        },
+        "head_yaw_rate": {
+            "mean": 0.002529970311268566,
+            "max": 0.01086085653292148
+        },
+        "head_osc": {
+            "mean": 0.028994447871684145,
+            "max": 1.0
+        },
+        "head_down": {
+            "mean": 0.04364761410276511,
+            "max": 0.9666666666666667
+        },
+        "dir_flip": {
+            "mean": 1.903763109191857,
+            "max": 10.0
+        },
+        "osc_energy": {
+            "mean": 0.7621646197606028,
+            "max": 1.4285714285714286
+        },
+        "stop_go": {
+            "mean": 1.822331893892659,
+            "max": 7.0
+        },
+        "hand_fidget": {
+            "mean": 0.021139946754228162,
+            "max": 0.1587320467841531
+        },
+        "movinet_pressure": {
+            "mean": 0.18170971934146538,
+            "max": 0.4613555359989369
+        },
+        "loitering_score": {
+            "mean": 0.6697635204606209,
+            "max": 1.0
+        },
+        "loitering_time": {
+            "mean": 12.698498869010903,
+            "max": 32.600000000000016
+        },
+        "loitering_radius": {
+            "mean": 0.12851060323585486,
+            "max": 0.32211569414507973
+        },
+        "weapon_confirmed": {
+            "mean": 0.7365823565700185,
+            "max": true
+        },
+        "weapon_cooldown": {
+            "mean": 8.058344838355957,
+            "max": 20.0
+        },
+        "weapon_score": {
+            "mean": 0.012045681586903896,
+            "max": 0.7281277179718018
+        }
+    }
+}

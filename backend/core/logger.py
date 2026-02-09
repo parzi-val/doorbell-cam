@@ -18,7 +18,7 @@ class EventLogger:
         self.config = Config
         self.summarizer = ClipSummarizer()
         self.no_logs = no_logs
-        
+        print(self.no_logs)
         # State
         self.state = self.STATE_IDLE
         self.active_clip_frames = [] 
@@ -252,6 +252,21 @@ class EventLogger:
             json.dump(metadata, f, indent=4, default=default_serializer)
             
         print(f"[LOGGER] Saved clip: {vid_path}")
+        
+        # Save Thumbnail (Best Frame or First Frame)
+        # We can try to pick a frame with high intent if we tracked it, 
+        # but for now let's just use the middle frame or the first one.
+        # Ideally, we should have passed `best_frame` index or image.
+        # Let's use the frame at 50% for now as a heuristic for "action".
+        try:
+            thumb_idx = len(frames) // 2
+            thumb_frame = frames[thumb_idx]
+            thumb_path = os.path.join(self.clips_dir, f"{metadata['clip_id']}.jpg")
+            cv2.imwrite(thumb_path, thumb_frame)
+            metadata["thumbnail_url"] = f"/videos/{metadata['clip_id']}.jpg"
+            print(f"[LOGGER] Saved thumbnail: {thumb_path}")
+        except Exception as e:
+            print(f"[LOGGER] Failed to save thumbnail: {e}")
         
         # Generate Summary if API Key is present
         # This might take time, but we are in a thread.

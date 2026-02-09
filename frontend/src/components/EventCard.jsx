@@ -16,9 +16,17 @@ const EventCard = ({ event, onClick }) => {
             className="bg-card border border-border rounded-xl overflow-hidden cursor-pointer hover:translate-y-[-4px] hover:shadow-lg hover:shadow-slate-200 transition-all group"
         >
             <div className="h-40 bg-slate-100 relative flex items-center justify-center text-secondary group-hover:bg-slate-200 transition-colors">
-                <Disc size={32} className="text-slate-300 group-hover:text-accent-orange transition-colors" />
+                {event.thumbnail_url ? (
+                    <img
+                        src={`http://localhost:8000${event.thumbnail_url}`}
+                        alt="Event Thumbnail"
+                        className="w-full h-full object-cover"
+                    />
+                ) : (
+                    <Disc size={32} className="text-slate-300 group-hover:text-accent-orange transition-colors" />
+                )}
                 <span className="absolute bottom-2 right-2 text-xs bg-white/90 px-2 py-1 rounded text-primary font-medium shadow-sm">
-                    {event.duration}s
+                    {event.duration?.toFixed(1)}s
                 </span>
             </div>
 

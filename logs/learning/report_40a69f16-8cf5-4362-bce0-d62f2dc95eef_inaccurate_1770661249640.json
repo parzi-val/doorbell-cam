@@ -1,0 +1,30 @@
+{
+    "report_id": "report_40a69f16-8cf5-4362-bce0-d62f2dc95eef_inaccurate_1770661249640",
+    "event_id": "40a69f16-8cf5-4362-bce0-d62f2dc95eef",
+    "timestamp": 1770661249.6405406,
+    "feedback": "inaccurate",
+    "model_state": {
+        "prediction": 0.5504068042831293,
+        "target": 0.0,
+        "error": -0.5504068042831293
+    },
+    "weight_updates": {
+        "velocity": -0.007587751934454446,
+        "motion_E": -0.007587751934454448,
+        "head_yaw_rate": -0.00030818004265468845,
+        "head_osc": -0.0,
+        "hand_fidget": -0.006644542182484509,
+        "osc_energy": -0.027520340214156464,
+        "head_down": -0.0,
+        "dir_flip": -0.022016272171325173,
+        "stop_go": -0.022016272171325173,
+        "movinet_pressure": -0.0,
+        "loitering_score": -0.027520340214156464
+    },
+    "credit_assignment": [
+        "loitering_score contributed 0.25 (Val: 1.00 * W: 0.25)",
+        "osc_energy contributed 0.10 (Val: 1.00 * W: 0.1)",
+        "dir_flip contributed 0.08 (Val: 0.80 * W: 0.1)"
+    ],
+    "conclusion": "Model over-confident. osc_energy caused false alarm; generated weight penalty of -0.0275."
+}
