@@ -32,9 +32,14 @@ class Pipeline:
         
     def reset(self):
         """Reset pipeline state."""
-        self.processor.reset()
-        self.intent_engine.reset()
+        # Re-instantiate logic components to ensure clean state
+        self.processor = SignalProcessor()
+        self.intent_engine = IntentEngine()
+        
+        # Reset detectors and workers
         self.detector.reset()
+        self.violence_worker.reset()
+        self.weapon_worker.reset()
 
     def run(self, input_source=0, headless=False, frame_callback=None, throttle=True):
         print(f"Starting pipeline on source: {input_source}")

@@ -142,6 +142,20 @@ class WeaponWorker(multiprocessing.Process):
         except queue.Empty:
             return None
 
+    def reset(self):
+        """Send reset signal to worker and clear queues."""
+        try:
+            while not self.queue.empty():
+                self.queue.get_nowait()
+        except:
+            pass
+        self.queue.put("RESET")
+        try:
+            while not self.result_queue.empty():
+                self.result_queue.get_nowait()
+        except:
+            pass
+
     def stop(self):
         self.running.value = False
 
@@ -155,9 +169,20 @@ class WeaponWorker(multiprocessing.Process):
             
         while self.running.value:
             try:
-                frame = self.queue.get(timeout=0.1)
+                item = self.queue.get(timeout=0.1)
             except queue.Empty:
                 continue
+            
+            if isinstance(item, str) and item == "RESET":
+                # WeaponDetector is stateless per frame, but we clear queues
+                try:
+                    while not self.result_queue.empty():
+                        self.result_queue.get_nowait()
+                except:
+                    pass
+                continue
+            
+            frame = item
                 
             try:
                 detections = detector.predict(frame)

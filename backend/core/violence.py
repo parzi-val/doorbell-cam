@@ -39,6 +39,11 @@ class ViolenceDetector:
                     self.input_shape = info['shape']
                     break
 
+    def reset(self):
+        """Reset internal states to zeros."""
+        for name in self.states:
+            self.states[name] = np.zeros(self.states[name].shape, dtype=self.states[name].dtype)
+
     def predict(self, frame):
         """
         Process a single frame and return the probability of 'Fight'.
@@ -110,6 +115,25 @@ class ViolenceWorker(multiprocessing.Process):
         except queue.Empty:
             return None # Return None to indicate no new update, or handle differently in pipeline
 
+    def reset(self):
+        """Send reset signal to worker and clear queues."""
+        # Clear input queue
+        try:
+            while not self.queue.empty():
+                self.queue.get_nowait()
+        except:
+            pass
+            
+        # Send reset signal
+        self.queue.put("RESET")
+        
+        # Clear result queue
+        try:
+            while not self.result_queue.empty():
+                self.result_queue.get_nowait()
+        except:
+            pass
+
     def stop(self):
         self.running.value = False
 
@@ -124,9 +148,21 @@ class ViolenceWorker(multiprocessing.Process):
         
         while self.running.value:
             try:
-                frame = self.queue.get(timeout=0.1)
+                item = self.queue.get(timeout=0.1)
             except queue.Empty:
                 continue
+            
+            if isinstance(item, str) and item == "RESET":
+                detector.reset()
+                # Clear any pending results generated before now
+                try:
+                    while not self.result_queue.empty():
+                        self.result_queue.get_nowait()
+                except:
+                    pass
+                continue
+            
+            frame = item
                 
             try:
                 prob = detector.predict(frame)

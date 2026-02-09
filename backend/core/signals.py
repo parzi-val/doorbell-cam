@@ -10,6 +10,7 @@ class SignalProcessor:
         self.centroid_buf = deque(maxlen=Config.WINDOW)
         self.vx_buf = deque(maxlen=Config.WINDOW)
         self.speed_buf = deque(maxlen=Config.WINDOW)
+        self.raw_speed_buf = deque(maxlen=Config.WINDOW)
         self.head_yaw_buf = deque(maxlen=Config.WINDOW)
         self.head_down_buf = deque(maxlen=Config.WINDOW)
         self.hand_energy_buf = deque(maxlen=Config.WINDOW)
@@ -18,7 +19,10 @@ class SignalProcessor:
         self.prev_wrists = None
         self.start_time = None # Set this when processing starts
         self.last_landmark_time = 0.0 # Track last successful detection
-        self.last_move_time = None # Track stationary time for loitering
+        
+        # Loitering State
+        self.loitering_start_pos = None
+        self.loitering_clock = 0.0
 
         # Smoothers
         self.speed_smoother = EMASmoother(Config.EMA_ALPHA)
@@ -42,6 +46,7 @@ class SignalProcessor:
         self.centroid_buf.clear()
         self.vx_buf.clear()
         self.speed_buf.clear()
+        self.raw_speed_buf.clear()
         self.head_yaw_buf.clear()
         self.head_down_buf.clear()
         self.hand_energy_buf.clear()
@@ -53,7 +58,9 @@ class SignalProcessor:
         self.prev_wrists = None
         self.start_time = None
         self.last_landmark_time = 0.0
-        self.last_move_time = None
+        
+        self.loitering_start_pos = None
+        self.loitering_clock = 0.0
         
         self.current_movinet_prob = 0.0
         self.prev_movinet_smoothed = 0.0
@@ -112,12 +119,15 @@ class SignalProcessor:
         if len(self.centroid_buf) > 1:
             dx = self.centroid_buf[-1][0] - self.centroid_buf[-2][0]
             vx = dx / Config.DT
-            speed = dist(self.centroid_buf[-1], self.centroid_buf[-2]) / Config.DT
+            raw_speed = dist(self.centroid_buf[-1], self.centroid_buf[-2]) / Config.DT
         else:
-            vx, speed = 0.0, 0.0
+            vx, raw_speed = 0.0, 0.0
+
+        # Store raw speed for loitering logic (avoid smoothing lag)
+        self.raw_speed_buf.append(raw_speed)
 
         # Apply smoothing
-        speed = self.speed_smoother.update(speed)
+        speed = self.speed_smoother.update(raw_speed)
         vx = self.vx_smoother.update(vx)
 
         self.vx_buf.append(vx)
@@ -159,6 +169,7 @@ class SignalProcessor:
         self.current_movinet_prob = self.movinet_smoother.update(movinet_probs[0])
         self.vx_buf.append(0.0)
         self.speed_buf.append(0.0)
+        self.raw_speed_buf.append(0.0)
         self.head_yaw_buf.append(0.0)
         self.head_down_buf.append(0)
         self.hand_energy_buf.append(0.0)
@@ -197,22 +208,49 @@ class SignalProcessor:
         # "Standing at relatively the same place for a while"
         # Logic: If speed is low for > THRESH seconds -> loitering
         
-        if self.last_move_time is None:
-             self.last_move_time = current_time
-             
-        is_moving = centroid_velocity > Config.LOITERING_SPEED_THRESH
+        # Loitering Refactor
+        # Initialize start pos on first valid detection in a sequence
+        if self.loitering_start_pos is None:
+            self.loitering_start_pos = hip_mid
+
+        # Use RAW speed to catch fidgeting/micro-movements immediately
+        current_raw_speed = self.raw_speed_buf[-1] if self.raw_speed_buf else 0.0
         
-        if is_moving:
-            self.last_move_time = current_time
+        # Displacement from the ORIGINAL loitering spot
+        displacement = dist(self.loitering_start_pos, hip_mid)
+        
+        loitering_type = "NONE"
+        loitering_radius = displacement
+        
+        # 3-Type Logic
+        if current_raw_speed < Config.LOITERING_SPEED_THRESH:
+            # Type 1: STATIONARY
+            # Truly still. Standard time accumulation.
+            self.loitering_clock += Config.DT
+            loitering_type = "STATIONARY"
+        
+        elif displacement < Config.LOITERING_DISP_THRESH:
+            # Type 2: PACING
+            # Moving (speed > thresh) but staying in spot (disp < thresh).
+            # Highly suspicious. Aggressive ramp.
+            self.loitering_clock += Config.DT * 2.0 
+            loitering_type = "PACING"
             
-        time_stationary = max(0.0, current_time - self.last_move_time)
-        
-        loitering_score = 0.0
-        if time_stationary > Config.LOITERING_TIME_THRESH:
-            # Ramp up based on time beyond threshold
-            over_time = time_stationary - Config.LOITERING_TIME_THRESH
-            # Clamp 0-1 over 5 seconds
+        else:
+            # Type 3: DISPLACED
+            # Moving AND left the spot. 
+            # Reset logic.
+            self.loitering_clock = 0.0
+            self.loitering_start_pos = hip_mid # New spot
+            loitering_type = "DISPLACED"
+            
+        # Calculate Score
+        # Ramp from 0 to 1 after TIME_THRESH
+        if self.loitering_clock > Config.LOITERING_TIME_THRESH:
+            over_time = self.loitering_clock - Config.LOITERING_TIME_THRESH
             loitering_score = min(over_time / 5.0, 1.0)
+        else:
+            loitering_score = 0.0
 
         head_yaw_rate = np.mean(np.abs(np.diff(self.head_yaw_buf))) if len(self.head_yaw_buf) > 1 else 0.0
 
@@ -334,6 +372,9 @@ class SignalProcessor:
             "hand_fidget": hand_fidget,
             "movinet_pressure": movinet_pressure,
             "loitering_score": loitering_score,
+            "loitering_type": loitering_type,
+            "loitering_time": self.loitering_clock,
+            "loitering_radius": loitering_radius,
             "weapon_confirmed": weapon_confirmed,
             "weapon_cooldown": weapon_cooldown
         }

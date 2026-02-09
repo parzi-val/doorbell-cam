@@ -20,7 +20,7 @@ class Config:
     # Loitering
     LOITERING_TIME_THRESH = 4.0 # Seconds before loitering signal starts ramping
     LOITERING_DISP_THRESH = 0.3 # Max net displacement to consider "in place"
-    LOITERING_SPEED_THRESH = 0.05 # Speed below which is considered "stationary" for loitering
+    LOITERING_SPEED_THRESH = 0.03 # Speed below which is considered "stationary" for loitering
     
     # Landmark indices
     NOSE = 0
